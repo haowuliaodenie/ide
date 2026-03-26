@@ -46,6 +46,7 @@ Prefer small explicit data types over ad hoc widget-only state.
 
 - Explorer must be driven by real filesystem state.
 - No-workspace state must be explicit.
+- `QFileSystemModel` defaults its root path to `.`; when no workspace is selected, explicitly reset the model with an empty root path and an invalid tree root index so the Explorer does not silently fall back to the process working directory.
 - Non-Explorer panels remain professional empty states for this mission; do not fake search results, git state, debugger state, or extensions data.
 
 ## Editor boundary

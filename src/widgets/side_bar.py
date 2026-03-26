@@ -46,9 +46,10 @@ class SideBar(QWidget):
         header_layout.addStretch()
 
         self.action_btn = QToolButton()
-        self.action_btn.setIcon(qta.icon("fa5s.ellipsis-h", color="#cccccc"))
-        self.action_btn.setToolTip("Views and More Actions...")
+        self.action_btn.setIcon(qta.icon("fa5s.folder-open", color="#cccccc"))
+        self.action_btn.setToolTip("Select Workspace")
         self.action_btn.setCursor(Qt.PointingHandCursor)
+        self.action_btn.clicked.connect(self._on_header_action_clicked)
         header_layout.addWidget(self.action_btn)
 
         layout.addWidget(self.header_widget)
@@ -145,9 +146,12 @@ class SideBar(QWidget):
         self.current_panel_id = panel_id
         self.title_label.setText(panel_id.title)
         self.stacked_widget.setCurrentWidget(self._panel_widgets[panel_id])
+        self.action_btn.setVisible(panel_id is SideBarPanelId.EXPLORER)
 
     def show_no_workspace_state(self) -> None:
         self.explorer_root_path = None
+        self.file_model.setRootPath("")
+        self.tree_view.setRootIndex(QModelIndex())
         self.explorer_empty_state.set_state(
             title="Open a Workspace",
             body="Select a folder to populate the Explorer with real files and directories.",
@@ -179,3 +183,7 @@ class SideBar(QWidget):
             return
 
         self.file_open_requested.emit(str(file_path))
+
+    def _on_header_action_clicked(self) -> None:
+        if self.current_panel_id is SideBarPanelId.EXPLORER:
+            self.workspace_selection_requested.emit()
