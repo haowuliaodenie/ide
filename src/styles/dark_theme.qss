@@ -1,0 +1,296 @@
+/* 
+  Design Tokens (Visualized in comments, applied in code):
+  - Primary Background (Editor): #1E1E1E
+  - Secondary Background (SideBar, BottomPanel): #252526
+  - Tertiary Background (ActivityBar, MenuBar): #333333
+  - Accent Color: #007ACC (subtle), #0060A0 (hover)
+  - Text Primary: #CCCCCC
+  - Text Muted: #858585
+  - Text Active: #FFFFFF
+  - Border Color: #3C3C3C or #2B2B2C
+*/
+
+* {
+    font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #cccccc;
+}
+
+QMainWindow {
+    background-color: #1e1e1e;
+}
+
+/* ================= Window Chrome ================= */
+QMenuBar {
+    background-color: #333333;
+    color: #cccccc;
+    border-bottom: 1px solid #2b2b2c;
+}
+QMenuBar::item {
+    background: transparent;
+    padding: 6px 10px;
+}
+QMenuBar::item:selected {
+    background-color: #505050;
+    color: #ffffff;
+}
+QMenu {
+    background-color: #252526;
+    color: #cccccc;
+    border: 1px solid #454545;
+}
+QMenu::item {
+    padding: 6px 24px 6px 24px;
+}
+QMenu::item:selected {
+    background-color: #04395e;
+    color: #ffffff;
+}
+
+QToolBar {
+    background-color: #252526;
+    border-bottom: 1px solid #2b2b2c;
+    spacing: 4px;
+    padding: 3px;
+}
+QToolBar QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 6px;
+    color: #cccccc;
+}
+QToolBar QToolButton:hover {
+    background-color: #3c3c3d;
+    color: #ffffff;
+}
+QToolBar QToolButton:pressed {
+    background-color: #464647;
+}
+
+/* ================= Splitters ================= */
+QSplitter::handle {
+    background-color: #2b2b2c;
+}
+QSplitter::handle:hover {
+    background-color: #007acc;
+}
+QSplitter::handle:horizontal {
+    width: 1px;
+}
+QSplitter::handle:vertical {
+    height: 1px;
+}
+
+/* ================= Navigation (Activity Bar) ================= */
+#ActivityBar {
+    background-color: #333333;
+    /* Subtle right border to transition into sidebar */
+    border-right: 1px solid #2b2b2c; 
+}
+#ActivityBar QToolButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 10px 0;
+    color: #858585;
+}
+#ActivityBar QToolButton:hover {
+    color: #cccccc;
+}
+#ActivityBar QToolButton:checked {
+    color: #ffffff;
+    /* Clean, crisp accent line for active state */
+    border-left: 2px solid #007acc; 
+}
+
+/* ================= Navigation (Side Bar) ================= */
+#SideBar {
+    background-color: #252526;
+}
+#SideBarHeader {
+    background-color: #252526;
+}
+#SideBarTitle {
+    font-size: 11px;
+    font-weight: bold;
+    color: #cccccc;
+    text-transform: uppercase;
+}
+#SideBarHeader QToolButton {
+    border: none;
+    border-radius: 3px;
+    padding: 2px;
+}
+#SideBarHeader QToolButton:hover {
+    background-color: #3c3c3d;
+}
+
+/* Tree View in Side Bar */
+QTreeView {
+    background-color: transparent;
+    color: #cccccc;
+    border: none;
+    outline: none;
+}
+QTreeView::item {
+    padding: 3px 0;
+}
+QTreeView::item:hover {
+    background-color: #2a2d2e;
+}
+QTreeView::item:selected {
+    background-color: #37373d;
+    color: #ffffff;
+}
+/* Hide standard tree arrows to draw custom or keep it minimal */
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    image: none; 
+}
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    image: none;
+}
+
+/* ================= Workspace (Editor Area) ================= */
+#EditorArea {
+    background-color: #1e1e1e;
+    border: none;
+}
+QTabBar#EditorTabBar {
+    background-color: #252526;
+    border-bottom: 1px solid #2b2b2c;
+}
+QTabBar#EditorTabBar::tab {
+    background-color: #2d2d2d;
+    color: #858585;
+    padding: 8px 16px;
+    border-right: 1px solid #252526;
+    border-top: 2px solid transparent; /* reserved for active state */
+}
+QTabBar#EditorTabBar::tab:selected {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-top: 2px solid #007acc; /* IDE style top accent */
+}
+QTabBar#EditorTabBar::tab:hover:!selected {
+    background-color: #333333;
+    color: #cccccc;
+}
+/* Close button styling */
+QTabBar#EditorTabBar::close-button {
+    subcontrol-position: right;
+    margin-left: 8px;
+}
+
+QPlainTextEdit#CodeEditor {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 14px;
+    padding: 10px;
+    selection-background-color: #264f78;
+}
+
+/* ================= Workspace (Bottom Panel) ================= */
+#BottomPanel {
+    background-color: #252526;
+}
+#BottomPanelHeader {
+    background-color: transparent;
+}
+#BottomPanelSelector {
+    background-color: transparent;
+    border-bottom: 1px solid #2b2b2c;
+    border: none;
+}
+#BottomPanelSelector::item {
+    background-color: transparent;
+    color: #858585;
+    padding: 6px 12px;
+    font-size: 11px;
+    border: none;
+    border-bottom: 1px solid transparent;
+}
+#BottomPanelSelector::item:selected {
+    background-color: transparent;
+    color: #e7e7e7;
+    border-bottom: 1px solid #007acc; /* Bottom accent instead of top */
+}
+#BottomPanelSelector::item:hover {
+    color: #cccccc;
+}
+
+#BottomPanel QPlainTextEdit {
+    background-color: transparent;
+    color: #cccccc;
+    border: none;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 12px;
+    padding: 5px 10px;
+}
+
+#ProblemsView {
+    color: #858585;
+    background-color: transparent;
+    padding: 16px;
+}
+
+#EmptyState {
+    background-color: transparent;
+}
+
+#EmptyStateTitle {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+#EmptyStateBody {
+    color: #cccccc;
+    font-size: 13px;
+}
+
+#EmptyStateReason {
+    color: #858585;
+    font-size: 12px;
+}
+
+QPushButton#EmptyStateAction {
+    background-color: #0e639c;
+    color: #ffffff;
+    border: 1px solid #1177bb;
+    border-radius: 4px;
+    padding: 7px 14px;
+}
+
+QPushButton#EmptyStateAction:hover {
+    background-color: #1177bb;
+}
+
+QPushButton#EmptyStateAction:pressed {
+    background-color: #0c5686;
+}
+
+/* ================= Status Bar ================= */
+QStatusBar {
+    /* Low saturation, professional */
+    background-color: #222225;
+    color: #cccccc;
+    border-top: 1px solid #2b2b2c;
+}
+QStatusBar QLabel {
+    background-color: transparent;
+    color: #cccccc;
+    padding: 0 8px;
+    font-size: 12px;
+}
+QStatusBar QLabel:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+QStatusBar::item {
+    border: none;
+}

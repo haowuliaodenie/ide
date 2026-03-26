@@ -1,0 +1,6 @@
+commands:
+  install: python -m pip install -r requirements.txt
+  test: python -m unittest discover -s tests -p "test*.py" -v
+  build: python -m compileall -q main.py src tests
+
+services: {}
