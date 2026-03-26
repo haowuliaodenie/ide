@@ -5,12 +5,21 @@ from typing import Any, Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMainWindow, QSplitter, QToolBar, QWidget
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QMainWindow,
+    QMessageBox,
+    QSplitter,
+    QToolBar,
+    QWidget,
+)
 import qtawesome as qta
 
 from .models.shell_state import (
     BottomPanelId,
     CursorState,
+    DirtyCloseAction,
     EditorSession,
     ShellState,
     SideBarPanelId,
@@ -221,6 +230,29 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getSaveFileName(self, "Save File", suggested_name)
         return path
 
+    def resolve_dirty_close(self, session: EditorSession) -> DirtyCloseAction:
+        message_box = QMessageBox(self)
+        message_box.setWindowTitle("Unsaved Changes")
+        message_box.setIcon(QMessageBox.Warning)
+        message_box.setText(f"Do you want to save changes to {session.display_name}?")
+        message_box.setInformativeText(
+            "Your changes will be lost if you do not save them."
+        )
+        save_button = message_box.addButton("Save", QMessageBox.AcceptRole)
+        discard_button = message_box.addButton("Discard", QMessageBox.DestructiveRole)
+        cancel_button = message_box.addButton("Cancel", QMessageBox.RejectRole)
+        message_box.setDefaultButton(save_button)
+        message_box.exec()
+
+        clicked_button = message_box.clickedButton()
+        if clicked_button is save_button:
+            return DirtyCloseAction.SAVE
+        if clicked_button is discard_button:
+            return DirtyCloseAction.DISCARD
+        if clicked_button is cancel_button:
+            return DirtyCloseAction.CANCEL
+        return DirtyCloseAction.CANCEL
+
     def _handle_new_file(self) -> EditorSession:
         display_name = f"Untitled-{self._untitled_counter}"
         self._untitled_counter += 1
@@ -254,14 +286,14 @@ class MainWindow(QMainWindow):
             self._refresh_status_bar()
             return None
 
-        workspace_path = Path(path)
+        workspace_path = self._normalize_path(path)
         self.shell_state.workspace.set_path(workspace_path)
         self._refresh_workspace_state()
         self._refresh_status_bar()
         return workspace_path
 
     def open_file(self, file_path: str | Path) -> EditorSession | None:
-        path = Path(file_path)
+        path = self._normalize_path(file_path)
         existing = self.shell_state.find_session_by_path(path)
         if existing is not None:
             self.shell_state.set_active_session(existing)
@@ -270,10 +302,9 @@ class MainWindow(QMainWindow):
             return existing
 
         try:
-            content = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            self.bottom_panel.append_output(f"Failed to open {path}: {exc}")
-            self.status_bar.showMessage(f"Failed to open {path.name}", 4000)
+            content = self._read_file_text(path)
+        except (OSError, UnicodeError) as exc:
+            self._report_file_error("open", path, exc)
             return None
 
         session = EditorSession(
@@ -298,32 +329,7 @@ class MainWindow(QMainWindow):
         session = self.shell_state.active_session
         if session is None:
             return False
-
-        target_path = session.path
-        if target_path is None:
-            selected = self.choose_save_path(session.display_name)
-            if not selected:
-                self.status_bar.showMessage("Save canceled.", 3000)
-                return False
-            target_path = Path(selected)
-            session.path = target_path
-            session.display_name = target_path.name
-            session.language = self._language_for_path(target_path)
-
-        try:
-            target_path.write_text(session.content, encoding="utf-8")
-        except OSError as exc:
-            self.bottom_panel.append_output(f"Failed to save {target_path}: {exc}")
-            self.status_bar.showMessage(f"Failed to save {target_path.name}", 4000)
-            return False
-
-        session.saved_content = session.content
-        session.is_dirty = False
-        session.encoding = "UTF-8"
-        session.line_ending = "LF"
-        self.editor_area.update_session(session)
-        self._refresh_status_bar()
-        return True
+        return self._save_session(session)
 
     def _on_session_selected(self, session_id: str) -> None:
         if not session_id:
@@ -360,21 +366,17 @@ class MainWindow(QMainWindow):
         if session is None:
             return
         if session.is_dirty:
-            self.status_bar.showMessage(
-                "Dirty session close requires explicit resolution and is not available yet.",
-                4000,
-            )
-            return
+            resolution = self.resolve_dirty_close(session)
+            if resolution is DirtyCloseAction.CANCEL:
+                self.status_bar.showMessage(
+                    f"Close canceled for {session.display_name}.",
+                    3000,
+                )
+                return
+            if resolution is DirtyCloseAction.SAVE and not self._save_session(session):
+                return
 
-        self.shell_state.editor_sessions = [
-            existing
-            for existing in self.shell_state.editor_sessions
-            if existing.session_id != session_id
-        ]
-        self.editor_area.close_session(session_id)
-        if self.shell_state.active_session_id == session_id:
-            self.shell_state.set_active_session(None)
-        self._refresh_status_bar()
+        self._close_session(session_id)
 
     def _on_bottom_panel_selected(self, panel_id: BottomPanelId) -> None:
         self.shell_state.active_bottom_panel = panel_id
@@ -411,6 +413,80 @@ class MainWindow(QMainWindow):
             if session.session_id == session_id:
                 return session
         return None
+
+    def _save_session(self, session: EditorSession) -> bool:
+        original_path = session.path
+        original_display_name = session.display_name
+        original_language = session.language
+
+        target_path = original_path
+        if target_path is None:
+            selected = self.choose_save_path(session.display_name)
+            if not selected:
+                self.status_bar.showMessage("Save canceled.", 3000)
+                return False
+            target_path = self._normalize_path(selected)
+
+        try:
+            self._write_file_text(target_path, session.content)
+        except (OSError, UnicodeError) as exc:
+            self._report_file_error("save", target_path, exc)
+            session.path = original_path
+            session.display_name = original_display_name
+            session.language = original_language
+            self.editor_area.update_session(session)
+            if self.shell_state.active_session_id == session.session_id:
+                self._refresh_status_bar()
+            return False
+
+        session.path = target_path
+        session.display_name = target_path.name
+        session.language = self._language_for_path(target_path)
+        session.saved_content = session.content
+        session.is_dirty = False
+        session.encoding = "UTF-8"
+        session.line_ending = "LF"
+        self.editor_area.update_session(session)
+        if self.shell_state.active_session_id == session.session_id:
+            self._refresh_status_bar()
+        return True
+
+    def _close_session(self, session_id: str) -> None:
+        self.shell_state.editor_sessions = [
+            existing
+            for existing in self.shell_state.editor_sessions
+            if existing.session_id != session_id
+        ]
+        self.editor_area.close_session(session_id)
+        if self.shell_state.active_session_id == session_id:
+            self.shell_state.set_active_session(None)
+        self._refresh_status_bar()
+
+    def _report_file_error(
+        self,
+        operation: str,
+        path: Path,
+        exc: Exception,
+    ) -> None:
+        self.show_bottom_panel(BottomPanelId.OUTPUT)
+        self.bottom_panel.append_output(f"Failed to {operation} {path}: {exc}")
+        self.status_bar.showMessage(f"Failed to {operation} {path.name}", 4000)
+
+    @staticmethod
+    def _read_file_text(path: Path) -> str:
+        return path.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _write_file_text(path: Path, content: str) -> None:
+        path.write_text(content, encoding="utf-8")
+
+    @staticmethod
+    def _normalize_path(path: str | Path) -> Path:
+        candidate = Path(path)
+        try:
+            return candidate.resolve(strict=False)
+        except OSError:
+            return candidate.absolute()
 
     @staticmethod
     def _language_for_path(path: Path) -> str:

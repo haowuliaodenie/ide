@@ -34,6 +34,11 @@ class CodeEditor(QPlainTextEdit):
             cursor.positionInBlock() + 1,
         )
 
+    def set_content_without_emitting(self, content: str) -> None:
+        self.blockSignals(True)
+        self.setPlainText(content)
+        self.blockSignals(False)
+
 
 class EditorTabs(QWidget):
     current_changed = Signal(int)
@@ -80,6 +85,10 @@ class EditorTabs(QWidget):
             self.set_current_index(min(index, len(self._widgets) - 1))
         else:
             self._current_index = -1
+
+    def clear_tabs(self) -> None:
+        while self._widgets:
+            self.remove_tab(0)
 
     def set_tab_text(self, index: int, text: str) -> None:
         if 0 <= index < self.tab_bar.count():
@@ -198,9 +207,7 @@ class EditorArea(QWidget):
             return
 
         if editor.toPlainText() != session.content:
-            editor.blockSignals(True)
-            editor.setPlainText(session.content)
-            editor.blockSignals(False)
+            editor.set_content_without_emitting(session.content)
 
         index = self._session_order.index(session_id)
         self.tabs.set_tab_text(index, self._session_label(session))
@@ -224,8 +231,10 @@ class EditorArea(QWidget):
         self.tabs.remove_tab(index)
 
         if self._session_order:
-            next_session_id = self._session_order[self.tabs.current_index()]
-            self.session_selected.emit(next_session_id)
+            current_index = self.tabs.current_index()
+            if 0 <= current_index < len(self._session_order):
+                next_session_id = self._session_order[current_index]
+                self.session_selected.emit(next_session_id)
         else:
             self.container.setCurrentWidget(self.empty_state)
             self.session_selected.emit("")
@@ -241,6 +250,19 @@ class EditorArea(QWidget):
 
     def editor_for_session(self, session_id: str) -> CodeEditor | None:
         return self._editors_by_session_id.get(session_id)
+
+    def current_session_id(self) -> str | None:
+        current_index = self.tabs.current_index()
+        if not (0 <= current_index < len(self._session_order)):
+            return None
+        return self._session_order[current_index]
+
+    def editor_has_focus(self, session_id: str) -> bool:
+        editor = self._editors_by_session_id.get(session_id)
+        if editor is None:
+            return False
+        focus_widget = self.window().focusWidget() if self.window() else None
+        return editor.hasFocus() or focus_widget is editor
 
     def _on_current_changed(self, index: int) -> None:
         if not (0 <= index < len(self._session_order)):

@@ -39,6 +39,23 @@ class BottomPanelId(str, Enum):
         }[self]
 
 
+class DirtyCloseAction(str, Enum):
+    SAVE = "save"
+    DISCARD = "discard"
+    CANCEL = "cancel"
+
+
+def _normalize_path(path: Path | None) -> Optional[Path]:
+    if path is None:
+        return None
+
+    candidate = Path(path)
+    try:
+        return candidate.resolve(strict=False)
+    except OSError:
+        return candidate.absolute()
+
+
 @dataclass
 class WorkspaceState:
     root_path: Optional[Path] = None
@@ -52,7 +69,7 @@ class WorkspaceState:
             self.reason = "No workspace selected"
             return
 
-        self.root_path = Path(path)
+        self.root_path = _normalize_path(path)
         self.available = self.root_path.exists() and self.root_path.is_dir()
         self.reason = "" if self.available else "Workspace folder is unavailable"
 
@@ -99,8 +116,8 @@ class ShellState:
         self.active_session_id = session.session_id if session else None
 
     def find_session_by_path(self, path: Path) -> Optional[EditorSession]:
-        normalized = Path(path)
+        normalized = _normalize_path(path)
         for session in self.editor_sessions:
-            if session.path == normalized:
+            if _normalize_path(session.path) == normalized:
                 return session
         return None

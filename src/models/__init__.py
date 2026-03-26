@@ -1,6 +1,7 @@
 from .shell_state import (
     BottomPanelId,
     CursorState,
+    DirtyCloseAction,
     EditorSession,
     ShellState,
     SideBarPanelId,
@@ -10,6 +11,7 @@ from .shell_state import (
 __all__ = [
     "BottomPanelId",
     "CursorState",
+    "DirtyCloseAction",
     "EditorSession",
     "ShellState",
     "SideBarPanelId",
