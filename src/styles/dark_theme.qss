@@ -203,10 +203,9 @@ QPlainTextEdit#CodeEditor {
 }
 #BottomPanelSelector {
     background-color: transparent;
-    border-bottom: 1px solid #2b2b2c;
     border: none;
 }
-#BottomPanelSelector::item {
+#BottomPanelSelector::tab {
     background-color: transparent;
     color: #858585;
     padding: 6px 12px;
@@ -214,12 +213,12 @@ QPlainTextEdit#CodeEditor {
     border: none;
     border-bottom: 1px solid transparent;
 }
-#BottomPanelSelector::item:selected {
+#BottomPanelSelector::tab:selected {
     background-color: transparent;
     color: #e7e7e7;
     border-bottom: 1px solid #007acc; /* Bottom accent instead of top */
 }
-#BottomPanelSelector::item:hover {
+#BottomPanelSelector::tab:hover {
     color: #cccccc;
 }
 
@@ -232,10 +231,43 @@ QPlainTextEdit#CodeEditor {
     padding: 5px 10px;
 }
 
-#ProblemsView {
-    color: #858585;
+#ProblemsHeader {
     background-color: transparent;
-    padding: 16px;
+    border-bottom: 1px solid #2b2b2c;
+}
+
+#ProblemsCountLabel {
+    color: #cccccc;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+#ProblemsTree {
+    background-color: transparent;
+    color: #cccccc;
+    border: none;
+    outline: none;
+}
+
+#ProblemsTree::item {
+    padding: 4px 6px;
+}
+
+#ProblemsTree::item:selected {
+    background-color: #37373d;
+    color: #ffffff;
+}
+
+#ProblemsTree::item:hover {
+    background-color: #2a2d2e;
+}
+
+#ProblemsTree QHeaderView::section {
+    background-color: #252526;
+    color: #858585;
+    border: none;
+    border-bottom: 1px solid #2b2b2c;
+    padding: 6px 8px;
 }
 
 #EmptyState {

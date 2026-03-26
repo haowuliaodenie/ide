@@ -39,6 +39,20 @@ class BottomPanelId(str, Enum):
         }[self]
 
 
+class ProblemSeverity(str, Enum):
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+    @property
+    def title(self) -> str:
+        return {
+            ProblemSeverity.ERROR: "Error",
+            ProblemSeverity.WARNING: "Warning",
+            ProblemSeverity.INFO: "Info",
+        }[self]
+
+
 class DirtyCloseAction(str, Enum):
     SAVE = "save"
     DISCARD = "discard"
@@ -78,6 +92,28 @@ class WorkspaceState:
 class CursorState:
     line: Optional[int] = None
     column: Optional[int] = None
+
+
+@dataclass
+class ProblemItem:
+    severity: ProblemSeverity
+    message: str
+    path: Optional[Path] = None
+    line: Optional[int] = None
+    column: Optional[int] = None
+    source: str = ""
+
+    @property
+    def location_text(self) -> str:
+        if self.path is None:
+            return "-"
+
+        location = self.path.as_posix()
+        if self.line is not None:
+            location = f"{location}:{self.line}"
+            if self.column is not None:
+                location = f"{location}:{self.column}"
+        return location
 
 
 @dataclass

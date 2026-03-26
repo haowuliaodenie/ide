@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
@@ -21,6 +21,7 @@ from .models.shell_state import (
     CursorState,
     DirtyCloseAction,
     EditorSession,
+    ProblemItem,
     ShellState,
     SideBarPanelId,
 )
@@ -192,6 +193,26 @@ class MainWindow(QMainWindow):
             self.set_bottom_panel_visible(True)
         self.bottom_panel.show_panel(panel_id)
         self.shell_state.active_bottom_panel = panel_id
+
+    def append_output(self, text: str, *, reveal: bool = False) -> None:
+        if reveal:
+            self.show_bottom_panel(BottomPanelId.OUTPUT)
+        self.bottom_panel.append_output(text)
+
+    def set_problems(
+        self,
+        problems: Sequence[ProblemItem],
+        *,
+        reveal: bool = False,
+    ) -> None:
+        if reveal:
+            self.show_bottom_panel(BottomPanelId.PROBLEMS)
+        self.bottom_panel.set_problems(problems)
+
+    def clear_problems(self, *, reveal: bool = False) -> None:
+        if reveal:
+            self.show_bottom_panel(BottomPanelId.PROBLEMS)
+        self.bottom_panel.clear_problems()
 
     def toggle_side_bar(self) -> None:
         self.set_side_bar_visible(not self.shell_state.is_side_bar_visible)
@@ -468,8 +489,7 @@ class MainWindow(QMainWindow):
         path: Path,
         exc: Exception,
     ) -> None:
-        self.show_bottom_panel(BottomPanelId.OUTPUT)
-        self.bottom_panel.append_output(f"Failed to {operation} {path}: {exc}")
+        self.append_output(f"Failed to {operation} {path}: {exc}", reveal=True)
         self.status_bar.showMessage(f"Failed to {operation} {path.name}", 4000)
 
     @staticmethod
